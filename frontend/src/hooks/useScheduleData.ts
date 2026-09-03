@@ -3,15 +3,23 @@ import type { CoursAPI } from "@/types/timetable";
 import { normalizeCourse, dayNameToIndex } from "@/lib/timetable-utils";
 
 // Utiliser l'URL publique de l'API par défaut
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.edt.xenox.fr";
+// En production, utiliser le proxy nginx du frontend (même origine). Une
+// URL externe reste possible via VITE_API_URL pour un environnement séparé.
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 /**
  * Hook to fetch and manage schedule data
  * @param dept Department code (e.g., "INFO")
  * @param trainYear Training year (1, 2, 3) - used for filtering by train_prog
+ * @param calendarYear Calendar year currently displayed in the timetable
  * @param week Week number
  */
-export function useScheduleData(dept: string, trainYear: string, week: number) {
+export function useScheduleData(
+  dept: string,
+  trainYear: string,
+  calendarYear: number,
+  week: number,
+) {
   const [courses, setCourses] = useState<CoursAPI[]>([]);
   const [allGroups, setAllGroups] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,13 +29,11 @@ export function useScheduleData(dept: string, trainYear: string, week: number) {
     setLoading(true);
     setError(null);
 
-    // Obtenir l'année civile actuelle pour l'API
-    const civilYear = new Date().getFullYear();
+    // Utiliser l'année de la semaine affichée. L'année civile actuelle ne
+    // convient pas lorsque l'utilisateur navigue vers une autre année.
+    const url = `${API_BASE_URL}/api/schedule/${dept}/${calendarYear}/${week}`;
     
-    // Construire l'URL de l'API avec l'année civile
-    const url = `${API_BASE_URL}/api/schedule/${dept}/${civilYear}/${week}`;
-    
-    console.log('Fetching schedule:', { dept, trainYear, week, url });
+    console.log('Fetching schedule:', { dept, trainYear, calendarYear, week, url });
 
     fetch(url)
       .then((res) => {
@@ -137,7 +143,7 @@ export function useScheduleData(dept: string, trainYear: string, week: number) {
       .finally(() => {
         setLoading(false);
       });
-  }, [dept, trainYear, week]);
+  }, [dept, trainYear, calendarYear, week]);
 
   // Regrouper les cours par jour (index numérique: 1=lundi, 2=mardi, etc.)
   const coursesByDay = useMemo(() => {

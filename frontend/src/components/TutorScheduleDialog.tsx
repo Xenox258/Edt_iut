@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Search, User, Calendar, Clock, MapPin, Users
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useTutors } from "@/hooks/useTutors";
 import { useTutorSchedule, TutorCourse } from "@/hooks/useTutorSchedule";
-import { formatTime, DAYS, hexToRgba, DAY_START_HOUR, DAY_END_HOUR, HOUR_HEIGHT } from "@/lib/timetable-utils";
+import { formatTime, DAYS, getISOWeeksInYear, hexToRgba, DAY_START_HOUR, DAY_END_HOUR, HOUR_HEIGHT } from "@/lib/timetable-utils";
 import type { Tutor } from "@/types/timetable";
 
 interface TutorScheduleDialogProps {
@@ -83,14 +83,15 @@ export const TutorScheduleDialog: React.FC<TutorScheduleDialogProps> = ({
   // Navigation de semaine avec gestion du passage à l'année suivante/précédente
   const goToPrevWeek = () => {
     if (week === 1) {
-      setWeek(52);
-      setYear(y => y - 1);
+      const previousYear = year - 1;
+      setWeek(getISOWeeksInYear(previousYear));
+      setYear(previousYear);
     } else {
       setWeek(w => w - 1);
     }
   };
   const goToNextWeek = () => {
-    if (week === 52) {
+    if (week >= getISOWeeksInYear(year)) {
       setWeek(1);
       setYear(y => y + 1);
     } else {

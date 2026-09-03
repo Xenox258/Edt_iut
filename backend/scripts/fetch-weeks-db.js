@@ -15,9 +15,11 @@ const API_BASE = "https://flopedt.iut-blagnac.fr/en/api/fetch/scheduledcourses";
 const DEPTS = ["INFO", "CS", "GIM", "RT"];
 
 // --- Helpers date/semaine ---
-function getCurrentWeek() {
-  const now = new Date();
-  const temp = new Date(now.getTime());
+// Retourne l'année ISO (celle du jeudi de la semaine), et non simplement
+// l'année civile de la date. Cela gère notamment les semaines 52/53 et le
+// passage d'une année à l'autre.
+function getISOWeekInfo(date = new Date()) {
+  const temp = new Date(date.getTime());
   temp.setHours(0, 0, 0, 0);
   const dayNum = temp.getDay() || 7;
   temp.setDate(temp.getDate() + 4 - dayNum);
@@ -26,24 +28,27 @@ function getCurrentWeek() {
   return { week, year: temp.getFullYear() };
 }
 
-function getFutureWeeks(count = 15) {
-  const { week: currentWeek, year: currentYear } = getCurrentWeek();
+function getCurrentWeek(date = new Date()) {
+  return getISOWeekInfo(date);
+}
+
+function getFutureWeeks(count = 15, startDate = new Date()) {
+  const start = new Date(startDate.getTime());
+  // Midi évite les effets de bord liés aux changements d'heure lors de
+  // l'ajout de semaines.
+  start.setHours(12, 0, 0, 0);
   const weeks = [];
 
   for (let i = 0; i < count; i++) {
-    let week = currentWeek + i;
-    let year = currentYear;
-
-    while (week > 52) {
-      week -= 52;
-      year += 1;
-    }
-
-    weeks.push({ week, year });
+    const date = new Date(start.getTime());
+    date.setDate(date.getDate() + i * 7);
+    weeks.push(getISOWeekInfo(date));
   }
 
   return weeks;
 }
+
+export { getISOWeekInfo, getCurrentWeek, getFutureWeeks };
 
 // --- Appels API flOpEDT ---
 async function fetchWeek(dept, week, year) {
@@ -212,9 +217,11 @@ async function saveWeekToDb(dept, week, year, data) {
 
     await conn.commit();
     console.log(`✅ Saved ${dept} week ${week}/${year} (${data.length} courses)`);
+    return true;
   } catch (e) {
     await conn.rollback();
     console.error(`❌ DB error for ${dept} week ${week}/${year}:`, e.message);
+    return false;
   } finally {
     conn.release();
   }
@@ -240,8 +247,12 @@ async function main() {
       const data = await fetchWeek(dept, week, year);
 
       if (data) {
-        await saveWeekToDb(dept, week, year, data);
-        totalSaved++;
+        const saved = await saveWeekToDb(dept, week, year, data);
+        if (saved) {
+          totalSaved++;
+        } else {
+          totalSkipped++;
+        }
       } else {
         totalSkipped++;
       }
@@ -256,7 +267,9 @@ async function main() {
   );
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

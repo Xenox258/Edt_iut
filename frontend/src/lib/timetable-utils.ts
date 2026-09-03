@@ -10,6 +10,30 @@ export const DAY_START_HOUR = 8;
 export const DAY_END_HOUR = 19;
 export const HOUR_HEIGHT = 80;
 
+// ISO week helpers. December 28 is always in the last ISO week of its year.
+export const getISOWeekInfo = (date: Date): { week: number; year: number } => {
+  const temp = new Date(date.getTime());
+  temp.setHours(0, 0, 0, 0);
+  const dayNum = temp.getDay() || 7;
+  temp.setDate(temp.getDate() + 4 - dayNum);
+  const yearStart = new Date(temp.getFullYear(), 0, 1);
+  const week = Math.ceil(((temp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return { week, year: temp.getFullYear() };
+};
+
+export const getISOWeeksInYear = (year: number): number =>
+  getISOWeekInfo(new Date(year, 11, 28)).week;
+
+export const getISOWeekStartDate = (week: number, year: number): Date => {
+  const jan4 = new Date(year, 0, 4);
+  jan4.setHours(0, 0, 0, 0);
+  const dayNum = jan4.getDay() || 7;
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - dayNum + 1 + (week - 1) * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
 // Helpers de temps
 export const formatTime = (minutes: number): string => {
   const h = Math.floor(minutes / 60);

@@ -132,6 +132,27 @@ All colors MUST be HSL.
   .transition-smooth {
     transition: var(--transition-smooth);
   }
+
+  .brand-font {
+    font-family: "Outfit", "Avenir Next", "Segoe UI", ui-sans-serif, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.35px;
+  }
+
+  @keyframes mobile-day-enter {
+    from {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .mobile-day-enter {
+    animation: mobile-day-enter 180ms ease-out;
+  }
   
   .gradient-primary {
     background: var(--gradient-primary);

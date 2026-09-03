@@ -22,8 +22,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=https://api.edt.xenox.fr
     container_name: edt-iut-frontend
     restart: unless-stopped
     ports:
