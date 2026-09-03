@@ -134,8 +134,9 @@ All colors MUST be HSL.
   }
 
   .brand-font {
-    font-family: "Space Grotesk", "Avenir Next", "Segoe UI", ui-sans-serif, sans-serif;
-    letter-spacing: -0.03em;
+    font-family: "Onest", "Avenir Next", "Segoe UI", ui-sans-serif, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.35px;
   }
 
   @keyframes mobile-day-enter {

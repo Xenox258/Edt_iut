@@ -634,7 +634,7 @@ export default function Timetable() {
               <SheetContent side="left" className="w-[320px] p-0 flex flex-col">
                 {/* Header avec titre et saison */}
                 <div className="p-6 border-b border-border">
-                  <h2 className="text-xl font-bold mb-1 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
+                  <h2 className="brand-font mb-1 text-xl text-primary">
                     BetterEDT
                   </h2>
                   <p className="text-sm text-muted-foreground">
@@ -832,7 +832,7 @@ export default function Timetable() {
             </div>
 
             <div className={isMobile ? 'min-w-0 text-center' : ''}>
-              <h1 className={`${isMobile ? 'mb-0 text-lg' : 'mb-2 text-4xl'} brand-font font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent`}>
+              <h1 className={`${isMobile ? 'mb-0 text-lg' : 'mb-2 text-4xl'} brand-font text-primary`}>
                 BetterEDT
               </h1>
               <p className={`text-muted-foreground ${isMobile ? 'hidden' : ''}`}>Semaine {week} • {yearNumber}</p>
