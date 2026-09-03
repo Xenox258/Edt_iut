@@ -17,13 +17,17 @@ type CourseCluster = {
   endTime: number;
 };
 
-const formatPause = (minutes: number) => {
-  if (minutes < 60) return `Pause ${minutes} min`;
+const DAY_START_MINUTES = 8 * 60;
+
+const formatDuration = (minutes: number) => {
+  if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  return remainingMinutes === 0
-    ? `Pause ${hours} h`
-    : `Pause ${hours} h ${remainingMinutes} min`;
+  return remainingMinutes === 0 ? `${hours} h` : `${hours} h ${remainingMinutes}`;
+};
+
+const formatPause = (minutes: number) => {
+  return `Pause ${formatDuration(minutes)}`;
 };
 
 const buildClusters = (courses: CourseWithPosition[]): CourseCluster[] => {
@@ -131,6 +135,18 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
 }) => {
   const touchStart = React.useRef<{ x: number; y: number } | null>(null);
   const clusters = React.useMemo(() => buildClusters(courses), [courses]);
+  const firstCluster = clusters[0];
+  const firstCourse = firstCluster?.courses[0];
+  const lastCourseEnd = clusters[clusters.length - 1]?.endTime;
+  const nextCourse = isToday
+    ? courses
+        .filter((course) => course.start_time > nowMinutes)
+        .sort((a, b) => a.start_time - b.start_time)[0]
+    : undefined;
+  const leadingFreeMinutes = firstCluster ? firstCluster.startTime - DAY_START_MINUTES : 0;
+  const summaryLabel = nextCourse ? "Prochain cours à" : "Premier cours à";
+  const summaryCourse = nextCourse || firstCourse;
+  const dayCountLabel = isToday ? "aujourd’hui" : "ce jour";
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     const touch = event.changedTouches[0];
@@ -159,21 +175,32 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
       }}
       aria-label="Emploi du temps de la journée"
     >
-      <div className="mb-3 flex items-center justify-between px-1">
-        <div>
+      <div className="mb-3 flex items-end justify-between gap-3 px-1">
+        <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
             {isToday ? "Aujourd’hui" : "Journée"}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {courses.length === 0
-              ? "Aucun cours prévu"
-              : `${courses.length} cours · appuyez pour les détails`}
-          </p>
+          {firstCourse && lastCourseEnd !== undefined ? (
+            <>
+              <p className="mt-1 text-base font-semibold leading-tight text-foreground">
+                {summaryLabel} <span className="tabular-nums text-primary">{formatTime((summaryCourse || firstCourse).start_time)}</span>
+              </p>
+              <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                {summaryCourse?.module_abbrev || summaryCourse?.module_name || "Cours"}
+                {summaryCourse?.room_name ? ` · ${summaryCourse.room_name}` : ""}
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm font-medium text-foreground">Aucun cours prévu</p>
+          )}
         </div>
-        {isToday && nowMinutes >= 8 * 60 && nowMinutes <= 19 * 60 && (
-          <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-[10px] font-medium text-rose-300">
-            En cours à {formatTime(nowMinutes)}
-          </span>
+        {firstCourse && lastCourseEnd !== undefined && (
+          <p className="shrink-0 text-right text-[11px] leading-tight text-muted-foreground">
+            <span className="font-semibold text-foreground">{courses.length} cours</span>{" "}
+            {dayCountLabel}
+            <br />
+            fin à <span className="font-semibold tabular-nums text-foreground">{formatTime(lastCourseEnd)}</span>
+          </p>
         )}
       </div>
 
@@ -191,6 +218,7 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
             {clusters.map((cluster, index) => {
               const previousCluster = clusters[index - 1];
               const pause = previousCluster ? cluster.startTime - previousCluster.endTime : 0;
+              const isFirstCluster = index === 0;
               const sortedClusterCourses = [...cluster.courses].sort(
                 (a, b) => a.start_time - b.start_time || a.end_time - b.end_time,
               );
@@ -198,6 +226,16 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
 
               return (
                 <React.Fragment key={`mobile-cluster-${cluster.startTime}-${cluster.endTime}`}>
+                  {isFirstCluster && leadingFreeMinutes >= 30 && (
+                    <div className="flex items-center gap-2 py-1 text-[10px] font-medium text-muted-foreground">
+                      <span className="w-[44px] shrink-0 text-right tabular-nums">{formatTime(DAY_START_MINUTES)}</span>
+                      <span className="h-px flex-1 bg-border/60" />
+                      <span className="shrink-0 rounded-full bg-muted/60 px-2 py-1">
+                        Libre {formatDuration(leadingFreeMinutes)}
+                      </span>
+                      <span className="h-px w-4 bg-border/60" />
+                    </div>
+                  )}
                   {pause > 15 && (
                     <div className="flex items-center gap-2 py-1 pl-[62px] text-[10px] font-medium text-muted-foreground">
                       <span className="h-px flex-1 bg-border/60" />
@@ -205,7 +243,7 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
                       <span className="h-px w-4 bg-border/60" />
                     </div>
                   )}
-                  <div className="space-y-2">
+                  <div className={`space-y-2 ${isFirstCluster && leadingFreeMinutes > 0 && leadingFreeMinutes < 30 ? "pt-2" : ""}`}>
                     {courseRows.map((row) => {
                       const columnCount = getColumnCount(row);
                       return (
