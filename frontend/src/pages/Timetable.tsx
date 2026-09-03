@@ -12,13 +12,12 @@ import { FreeRoomsDialog } from "@/components/FreeRoomsDialog";
 import { TutorScheduleDialog } from "@/components/TutorScheduleDialog";
 import { CourseCard } from "@/components/CourseCard";
 import { DaySelector } from "@/components/DaySelector";
-import { DayRangeSelector } from "@/components/DayRangeSelector";
 import { useScheduleData } from "@/hooks/useScheduleData";
 import { useTutors } from "@/hooks/useTutors";
 import { useDisplayTimes } from "@/hooks/useDisplayTimes";
 import { DayHeaders } from "@/components/DayHeaders";
 import { TimeColumn } from "@/components/TimeColumn";
-import { MobileDayPanel } from "@/components/MobileDayPanel";
+import { MobileDayTimeline } from "@/components/MobileDayTimeline";
 
 // Imports depuis les nouveaux modules
 import type { CoursAPI, CoursAPIRaw, CourseWithPosition } from "@/types/timetable";
@@ -31,6 +30,8 @@ import {
   sortGroups,
   coursesOverlap,
   getDayOptionsForDevice,
+  getISOWeeksInYear,
+  getISOWeekStartDate as getSharedISOWeekStartDate,
   hexToRgba,
   DAYS,
   DAY_START_HOUR,
@@ -38,7 +39,7 @@ import {
   HOUR_HEIGHT,
 } from "@/lib/timetable-utils";
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://152.228.219.56:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const COMMON_GROUP_CODES = new Set(["CE"]);
 
 const normalizeGroupCode = (value: string) => value.trim().toUpperCase();
@@ -88,17 +89,6 @@ const groupsMatchFilter = (courseGroup: string, activeFilter: string): boolean =
   }
 
   return false;
-};
-
-// ISO week helpers (specific to this component)
-const getISOWeekStartDate = (week: number, year: number): Date => {
-  const simple = new Date(year, 0, 1 + (week - 1) * 7);
-  const dayOfWeek = simple.getDay();
-  const isoMonday = new Date(simple);
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  isoMonday.setDate(simple.getDate() + diff);
-  isoMonday.setHours(0, 0, 0, 0);
-  return isoMonday;
 };
 
 const getISOWeekInfo = (date: Date) => {
@@ -151,7 +141,7 @@ const getSafeEmailDisplay = (email?: string | null): string | null => {
 
 export default function Timetable() {
   const isMobile = useIsMobile();
-  const dayOptions = React.useMemo(() => getDayOptionsForDevice(isMobile), [isMobile]);
+  const dayOptions = React.useMemo(() => (isMobile ? [1] : getDayOptionsForDevice(isMobile)), [isMobile]);
   const initialWeekInfo = React.useMemo(() => getInitialWeekInfo(), []);
   const [courses, setCourses] = useState<CoursAPI[]>([]); // kept only for types; will be set from hook
   const [daysToShow, setDaysToShow] = useState<number>(() => {
@@ -299,7 +289,7 @@ export default function Timetable() {
 
   // Fetch + filters moved to hook
   // year contient l'année de formation ("1", "2", "3" ou "ALL")
-  const { courses: rawCourses, coursesByDay: rawCoursesByDay, allGroups: hookAllGroups, loading, error } = useScheduleData(dept, year, week);
+  const { courses: rawCourses, coursesByDay: rawCoursesByDay, allGroups: hookAllGroups, loading, error } = useScheduleData(dept, year, yearNumber, week);
   
   // Hook pour récupérer les informations des tuteurs
   const { getTutorInfo, getTutorFullName } = useTutors(dept);
@@ -552,10 +542,14 @@ export default function Timetable() {
     }, {} as { [key: number]: CoursAPI[] });
   }, [courses]);
 
+  const selectedDayCourses = React.useMemo(() => {
+    return buildCoursesWithColumns([...(coursesByDay[startDayIndex + 1] || [])]);
+  }, [buildCoursesWithColumns, coursesByDay, startDayIndex]);
+
   // Display times via hook
   const displayTimes = useDisplayTimes(courses, dayStartHour, dayEndHour);
 
-  const isoWeekStartDate = React.useMemo(() => getISOWeekStartDate(week, yearNumber), [week, yearNumber]);
+  const isoWeekStartDate = React.useMemo(() => getSharedISOWeekStartDate(week, yearNumber), [week, yearNumber]);
   const currentMonthLabel = React.useMemo(
     () =>
       isoWeekStartDate.toLocaleDateString("fr-FR", {
@@ -586,6 +580,32 @@ export default function Timetable() {
     return columnDate.toDateString() === now.toDateString();
   }, [getDateForColumn, isCurrentWeek, now]);
 
+  const goToPreviousDay = React.useCallback(() => {
+    if (startDayIndex > 0) {
+      setStartDayIndex((current) => current - 1);
+      return;
+    }
+
+    const previousYear = week === 1 ? yearNumber - 1 : yearNumber;
+    const previousWeek = week === 1 ? getISOWeeksInYear(previousYear) : week - 1;
+    setWeek(previousWeek);
+    setYearNumber(previousYear);
+    setStartDayIndex(4);
+  }, [startDayIndex, week, yearNumber]);
+
+  const goToNextDay = React.useCallback(() => {
+    if (startDayIndex < days.length - 1) {
+      setStartDayIndex((current) => current + 1);
+      return;
+    }
+
+    const nextYear = week >= getISOWeeksInYear(yearNumber) ? yearNumber + 1 : yearNumber;
+    const nextWeek = week >= getISOWeeksInYear(yearNumber) ? 1 : week + 1;
+    setWeek(nextWeek);
+    setYearNumber(nextYear);
+    setStartDayIndex(0);
+  }, [startDayIndex, week, yearNumber, days.length]);
+
   const selectedTutorInfo = selectedCourse ? getTutorInfo(selectedCourse.tutor_username) : null;
   const selectedTutorEmail = getSafeEmailDisplay(selectedTutorInfo?.email);
 
@@ -595,9 +615,9 @@ export default function Timetable() {
         className={`min-h-screen bg-background ${isMobile ? 'p-2' : 'p-4 md:p-6 lg:p-8'} animate-fade-in ${isMobile ? '' : 'max-w-[75vw] mx-auto'}`}
       >
       {/* Header */}
-      <header className={`${isMobile ? 'mb-4' : 'mb-8'} animate-slide-up`}>
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
+      <header className={`${isMobile ? 'mb-2' : 'mb-8'} animate-slide-up`}>
+        <div className={`flex flex-col ${isMobile ? 'gap-2' : 'gap-6'} md:flex-row md:items-center md:justify-between`}>
+          <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : ''}`}>
             {/* Menu Button */}
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
@@ -808,15 +828,31 @@ export default function Timetable() {
             </Sheet>
 
             <div>
-              <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent mb-2`}>
+              <h1 className={`${isMobile ? 'text-lg mb-0' : 'text-4xl mb-2'} font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent`}>
                 BetterEDT
               </h1>
-              <p className={`text-muted-foreground ${isMobile ? 'text-xs' : ''}`}>Semaine {week} • {yearNumber}</p>
+              <p className={`text-muted-foreground ${isMobile ? 'hidden' : ''}`}>Semaine {week} • {yearNumber}</p>
             </div>
+
+            {isMobile && (
+              <select
+                value={groupFilter}
+                onChange={(e) => setGroupFilter(e.target.value)}
+                aria-label="Groupe"
+                className="ml-auto h-10 max-w-[112px] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none transition-base focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="ALL">Tous</option>
+                {Object.entries(availableGroupsByCategory).map(([category, groups]) => (
+                  <optgroup key={category} label={category}>
+                    {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {/* Day navigation - masqué pour mobile (géré par DaySelector/DayRangeSelector) */}
+          <div className="hidden flex-wrap gap-3 md:flex">
+            {/* Day navigation - conservée pour la vue desktop */}
             {daysToShow < 5 && !isMobile && (
               <div className="flex items-center gap-1 rounded-xl bg-card border border-border p-1 shadow-elegant">
                 <button
@@ -920,34 +956,37 @@ export default function Timetable() {
         </div>
 
         {/* Filters */}
-        <div className={`${isMobile ? 'mt-3' : 'mt-6'} flex flex-wrap gap-3`}>
-          <select
-            value={groupFilter}
-            onChange={(e) => setGroupFilter(e.target.value)}
-            className={`${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2.5'} rounded-xl bg-card border border-border text-foreground font-medium transition-base hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none shadow-elegant ${isMobile ? 'flex-1 min-w-0' : 'min-w-[200px]'}`}
-          >
-            <option value="ALL">📚 Tous les groupes</option>
-            {Object.entries(availableGroupsByCategory).map(([category, groups]) => (
-              <optgroup key={category} label={category}>
-                {groups.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+        <div className={`${isMobile ? 'mt-1 gap-2' : 'mt-6 gap-3'} flex flex-wrap`}>
+          {!isMobile && (
+            <select
+              value={groupFilter}
+              onChange={(e) => setGroupFilter(e.target.value)}
+              className="min-w-[200px] rounded-xl border border-border bg-card px-4 py-2.5 font-medium text-foreground outline-none shadow-elegant transition-base hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="ALL">📚 Tous les groupes</option>
+              {Object.entries(availableGroupsByCategory).map(([category, groups]) => (
+                <optgroup key={category} label={category}>
+                  {groups.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          )}
 
           {/* Navigation semaine avec boutons et calendrier */}
-          <div className="flex items-center gap-2">
+          <div className={`${isMobile ? 'w-full justify-between gap-0 rounded-xl border border-border/70 bg-card/60 p-0.5 shadow-sm' : 'gap-2'} flex items-center`}>
             <button
               onClick={() => {
                 if (week === 1) {
-                  setWeek(52);
-                  setYearNumber(yearNumber - 1);
+                  const previousYear = yearNumber - 1;
+                  setWeek(getISOWeeksInYear(previousYear));
+                  setYearNumber(previousYear);
                 } else {
                   setWeek(week - 1);
                 }
               }}
-              className={`flex items-center justify-center ${isMobile ? 'w-9 h-9' : 'w-11 h-11'} rounded-xl bg-card border border-border hover:bg-muted transition-base shadow-elegant`}
+              className={`flex items-center justify-center ${isMobile ? 'h-10 w-10 rounded-lg border-0 bg-transparent shadow-none' : 'h-11 w-11 rounded-xl border border-border bg-card shadow-elegant'} hover:bg-muted transition-base`}
               aria-label="Semaine précédente"
             >
               <ChevronLeft className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
@@ -956,11 +995,11 @@ export default function Timetable() {
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                   <button
-                    className={`flex items-center justify-center gap-2 ${isMobile ? 'px-3 h-9' : 'px-4 h-11'} rounded-xl bg-card border border-border hover:bg-muted transition-base shadow-elegant`}
+                    className={`flex items-center justify-center gap-2 ${isMobile ? 'h-10 min-w-0 flex-1 rounded-lg border-0 bg-transparent px-2 shadow-none' : 'h-11 rounded-xl border border-border bg-card px-4 shadow-elegant'} hover:bg-muted transition-base`}
                     aria-label="Choisir une date"
                   >
                     <CalendarIcon className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                    <span className={`font-medium text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>S{week}</span>
+                    <span className={`font-medium text-muted-foreground ${isMobile ? 'text-xs' : 'text-base'}`}>Semaine {week}</span>
                   </button>
                 </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -984,14 +1023,14 @@ export default function Timetable() {
 
             <button
               onClick={() => {
-                if (week >= 52) {
+                if (week >= getISOWeeksInYear(yearNumber)) {
                   setWeek(1);
                   setYearNumber(yearNumber + 1);
                 } else {
                   setWeek(week + 1);
                 }
               }}
-              className={`flex items-center justify-center ${isMobile ? 'w-9 h-9' : 'w-11 h-11'} rounded-xl bg-card border border-border hover:bg-muted transition-base shadow-elegant`}
+              className={`flex items-center justify-center ${isMobile ? 'h-10 w-10 rounded-lg border-0 bg-transparent shadow-none' : 'h-11 w-11 rounded-xl border border-border bg-card shadow-elegant'} hover:bg-muted transition-base`}
               aria-label="Semaine suivante"
             >
               <ChevronRight className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
@@ -1001,12 +1040,27 @@ export default function Timetable() {
       </header>
 
       {/* Month label above timetable */}
-      <div className={`${isMobile ? "mb-3" : "mb-6"} text-sm font-semibold text-muted-foreground capitalize`}>
+      <div className="mb-6 hidden text-sm font-semibold capitalize text-muted-foreground md:block">
         {currentMonthLabel}
       </div>
 
-      {/* Empty state */}
-      {courses.length === 0 && (
+      {/* Loading and empty states */}
+      {loading && courses.length === 0 && (
+        <div className="flex min-h-[132px] items-center justify-center text-center animate-scale-in">
+          <p className="text-sm text-muted-foreground">Chargement de l’emploi du temps…</p>
+        </div>
+      )}
+
+      {!loading && error && courses.length === 0 && (
+        <div className="flex min-h-[132px] items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-5 text-center animate-scale-in">
+          <div>
+            <h3 className="text-sm font-semibold">Impossible de charger l’emploi du temps</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Vérifiez la connexion puis réessayez.</p>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && courses.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center animate-scale-in">
           <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mb-4">
             <CalendarIcon className="w-10 h-10 text-muted-foreground" />
@@ -1016,41 +1070,42 @@ export default function Timetable() {
         </div>
       )}
 
-      {/* Timetable Grid */}
-      {courses.length > 0 && (
+      {/* Mobile timetable: a compact day flow replaces the proportional calendar grid. */}
+      {courses.length > 0 && isMobile && (
+        <div
+          key={`mobile-day-${week}-${yearNumber}-${groupFilter}-${startDayIndex}`}
+          className="animate-scale-in"
+        >
+          <DaySelector
+            days={days}
+            selectedDayIndex={startDayIndex}
+            onDayChange={setStartDayIndex}
+            getDateForColumn={getDateForColumn}
+            isTodayColumn={isTodayColumn}
+          />
+          <MobileDayTimeline
+            key={`mobile-timeline-${week}-${yearNumber}-${startDayIndex}`}
+            courses={selectedDayCourses}
+            isToday={isTodayColumn(startDayIndex)}
+            nowMinutes={nowMinutes}
+            onCourseClick={(course) => {
+              setSelectedCourse(course);
+              setCourseDialogOpen(true);
+            }}
+            onPreviousDay={goToPreviousDay}
+            onNextDay={goToNextDay}
+          />
+        </div>
+      )}
+
+      {/* Desktop/tablet timetable grid. */}
+      {courses.length > 0 && !isMobile && (
         <div 
           key={`grid-${week}-${yearNumber}-${groupFilter}-${daysToShow}`}
           className={`rounded-2xl border border-border shadow-lg animate-scale-in overflow-hidden ${
             isMobile ? 'bg-background/95 backdrop-blur-sm' : 'bg-card'
           }`}
         >
-          {/* Day Selector for mobile 1-day view */}
-          {isMobile && daysToShow === 1 && (
-            <DaySelector
-              days={days}
-              selectedDayIndex={startDayIndex}
-              onDayChange={setStartDayIndex}
-              getDateForColumn={getDateForColumn}
-              isTodayColumn={isTodayColumn}
-              week={week}
-              onWeekChange={setWeek}
-              yearNumber={yearNumber}
-              onYearChange={setYearNumber}
-            />
-          )}
-
-          {/* Day Range Selector for mobile 3-day view */}
-          {isMobile && daysToShow === 3 && (
-            <DayRangeSelector
-              days={days}
-              startDayIndex={startDayIndex}
-              daysToShow={daysToShow}
-              onStartDayChange={setStartDayIndex}
-              getDateForColumn={getDateForColumn}
-              isTodayColumn={isTodayColumn}
-            />
-          )}
-
           <div
             className={`${isMobile ? 'relative overflow-y-auto touch-pan-y scroll-smooth' : ''}`}
             style={{

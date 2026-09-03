@@ -10,6 +10,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "sync": "node scripts/sync.js --weeks=1-53 --year=2025"
+    "test": "node --test scripts/*.test.js",
+    "sync": "node scripts/fetch-weeks-db.js"
   }
 }

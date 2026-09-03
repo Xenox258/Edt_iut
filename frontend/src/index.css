@@ -132,6 +132,21 @@ All colors MUST be HSL.
   .transition-smooth {
     transition: var(--transition-smooth);
   }
+
+  @keyframes mobile-day-enter {
+    from {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .mobile-day-enter {
+    animation: mobile-day-enter 180ms ease-out;
+  }
   
   .gradient-primary {
     background: var(--gradient-primary);

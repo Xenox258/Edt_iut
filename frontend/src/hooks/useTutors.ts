@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import type { TutorsMap } from "@/types/timetable";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.edt.xenox.fr";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 // Cache global pour éviter les requêtes multiples
-let globalTutorsCache: Record<string, TutorsMap> = {};
-let globalCacheTimestamps: Record<string, number> = {};
+const globalTutorsCache: Record<string, TutorsMap> = {};
+const globalCacheTimestamps: Record<string, number> = {};
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures
 
 /**

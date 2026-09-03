@@ -75,6 +75,15 @@ export default defineConfig({
     host: '0.0.0.0', // Écoute sur toutes les interfaces réseau
     port: 5173,
     strictPort: true,
+    // Même origine en production (nginx) et proxy local pendant le dev.
+    // Cela permet de conserver les vraies données sans dépendre d'un nom DNS
+    // externe ou d'une valeur VITE_API_URL embarquée dans le bundle.
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3005',
+        changeOrigin: true,
+      },
+    },
     hmr: {
       host: "192.168.1.15", // L'adresse IP de votre Raspberry Pi
       protocol: 'ws',

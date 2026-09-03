@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.edt.xenox.fr";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export interface TutorCourse {
   id: number;
