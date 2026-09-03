@@ -617,17 +617,20 @@ export default function Timetable() {
       {/* Header */}
       <header className={`${isMobile ? 'mb-4' : 'mb-8'} animate-slide-up`}>
         <div className={`flex flex-col ${isMobile ? 'gap-2' : 'gap-6'} md:flex-row md:items-center md:justify-between`}>
-          <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : ''}`}>
+          <div className={isMobile
+            ? 'grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3'
+            : 'flex items-center gap-3'}>
             {/* Menu Button */}
-            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild>
-                <button
-                  className="flex items-center justify-center w-11 h-11 rounded-xl bg-card border border-border hover:bg-muted transition-base shadow-elegant"
-                  aria-label="Menu"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-              </SheetTrigger>
+            <div className={isMobile ? 'flex min-w-0 justify-start' : ''}>
+              <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                <SheetTrigger asChild>
+                  <button
+                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card shadow-elegant transition-base hover:bg-muted"
+                    aria-label="Menu"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
+                </SheetTrigger>
               <SheetContent side="left" className="w-[320px] p-0 flex flex-col">
                 {/* Header avec titre et saison */}
                 <div className="p-6 border-b border-border">
@@ -824,30 +827,33 @@ export default function Timetable() {
                     </div>
                   </div>
                 </div>
-              </SheetContent>
-            </Sheet>
+                </SheetContent>
+              </Sheet>
+            </div>
 
-            <div>
-              <h1 className={`${isMobile ? 'text-lg mb-0' : 'text-4xl mb-2'} font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent`}>
+            <div className={isMobile ? 'min-w-0 text-center' : ''}>
+              <h1 className={`${isMobile ? 'mb-0 text-lg' : 'mb-2 text-4xl'} brand-font font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent`}>
                 BetterEDT
               </h1>
               <p className={`text-muted-foreground ${isMobile ? 'hidden' : ''}`}>Semaine {week} • {yearNumber}</p>
             </div>
 
             {isMobile && (
-              <select
-                value={groupFilter}
-                onChange={(e) => setGroupFilter(e.target.value)}
-                aria-label="Groupe"
-                className="ml-auto h-11 max-w-[112px] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none transition-base focus:border-primary focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="ALL">Tous</option>
-                {Object.entries(availableGroupsByCategory).map(([category, groups]) => (
-                  <optgroup key={category} label={category}>
-                    {groups.map((g) => <option key={g} value={g}>{g}</option>)}
-                  </optgroup>
-                ))}
-              </select>
+              <div className="flex min-w-0 justify-end">
+                <select
+                  value={groupFilter}
+                  onChange={(e) => setGroupFilter(e.target.value)}
+                  aria-label="Groupe"
+                  className="h-11 w-full max-w-[112px] truncate rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none transition-base focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="ALL">Tous</option>
+                  {Object.entries(availableGroupsByCategory).map(([category, groups]) => (
+                    <optgroup key={category} label={category}>
+                      {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
 
