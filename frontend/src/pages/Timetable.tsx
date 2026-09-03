@@ -615,7 +615,7 @@ export default function Timetable() {
         className={`min-h-screen bg-background ${isMobile ? 'p-2' : 'p-4 md:p-6 lg:p-8'} animate-fade-in ${isMobile ? '' : 'max-w-[75vw] mx-auto'}`}
       >
       {/* Header */}
-      <header className={`${isMobile ? 'mb-2' : 'mb-8'} animate-slide-up`}>
+      <header className={`${isMobile ? 'mb-4' : 'mb-8'} animate-slide-up`}>
         <div className={`flex flex-col ${isMobile ? 'gap-2' : 'gap-6'} md:flex-row md:items-center md:justify-between`}>
           <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : ''}`}>
             {/* Menu Button */}
@@ -839,7 +839,7 @@ export default function Timetable() {
                 value={groupFilter}
                 onChange={(e) => setGroupFilter(e.target.value)}
                 aria-label="Groupe"
-                className="ml-auto h-10 max-w-[112px] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none transition-base focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="ml-auto h-11 max-w-[112px] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none transition-base focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
                 <option value="ALL">Tous</option>
                 {Object.entries(availableGroupsByCategory).map(([category, groups]) => (
@@ -956,7 +956,7 @@ export default function Timetable() {
         </div>
 
         {/* Filters */}
-        <div className={`${isMobile ? 'mt-1 gap-2' : 'mt-6 gap-3'} flex flex-wrap`}>
+        <div className={`${isMobile ? 'mt-4 gap-2' : 'mt-6 gap-3'} flex flex-wrap`}>
           {!isMobile && (
             <select
               value={groupFilter}
@@ -986,7 +986,7 @@ export default function Timetable() {
                   setWeek(week - 1);
                 }
               }}
-              className={`flex items-center justify-center ${isMobile ? 'h-10 w-10 rounded-lg border-0 bg-transparent shadow-none' : 'h-11 w-11 rounded-xl border border-border bg-card shadow-elegant'} hover:bg-muted transition-base`}
+              className={`flex items-center justify-center ${isMobile ? 'h-11 w-11 rounded-lg border-0 bg-transparent shadow-none' : 'h-11 w-11 rounded-xl border border-border bg-card shadow-elegant'} hover:bg-muted transition-base`}
               aria-label="Semaine précédente"
             >
               <ChevronLeft className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
@@ -995,7 +995,7 @@ export default function Timetable() {
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                   <button
-                    className={`flex items-center justify-center gap-2 ${isMobile ? 'h-10 min-w-0 flex-1 rounded-lg border-0 bg-transparent px-2 shadow-none' : 'h-11 rounded-xl border border-border bg-card px-4 shadow-elegant'} hover:bg-muted transition-base`}
+                    className={`flex items-center justify-center gap-2 ${isMobile ? 'h-11 min-w-0 flex-1 rounded-lg border-0 bg-transparent px-2 shadow-none' : 'h-11 rounded-xl border border-border bg-card px-4 shadow-elegant'} hover:bg-muted transition-base`}
                     aria-label="Choisir une date"
                   >
                     <CalendarIcon className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
@@ -1030,7 +1030,7 @@ export default function Timetable() {
                   setWeek(week + 1);
                 }
               }}
-              className={`flex items-center justify-center ${isMobile ? 'h-10 w-10 rounded-lg border-0 bg-transparent shadow-none' : 'h-11 w-11 rounded-xl border border-border bg-card shadow-elegant'} hover:bg-muted transition-base`}
+              className={`flex items-center justify-center ${isMobile ? 'h-11 w-11 rounded-lg border-0 bg-transparent shadow-none' : 'h-11 w-11 rounded-xl border border-border bg-card shadow-elegant'} hover:bg-muted transition-base`}
               aria-label="Semaine suivante"
             >
               <ChevronRight className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />

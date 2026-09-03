@@ -21,10 +21,9 @@ export const DaySelector: React.FC<DaySelectorProps> = ({
   const dateRange = `${firstDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} – ${lastDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 
   return (
-    <div className="sticky top-0 z-20 -mx-1 border-b border-border/70 bg-background/95 px-1 pb-2 pt-1 backdrop-blur-sm">
-      <div className="mb-2 flex items-baseline justify-between px-1">
+    <div className="sticky top-0 z-20 -mx-1 border-b border-border/70 bg-background/95 px-1 pb-2 pt-0 backdrop-blur-sm">
+      <div className="mb-2 px-1">
         <span className="text-xs font-medium text-muted-foreground">{dateRange}</span>
-        <span className="text-[11px] font-semibold text-primary">Choisir un jour</span>
       </div>
 
       <div className="grid grid-cols-5 gap-1">

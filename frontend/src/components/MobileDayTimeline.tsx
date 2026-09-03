@@ -93,7 +93,7 @@ const MobileTimelineCourse: React.FC<{
     <button
       type="button"
       onClick={onClick}
-      className="group min-h-[86px] min-w-0 rounded-xl border border-border/70 border-l-4 bg-card/85 px-3 py-2.5 text-left shadow-sm transition-all hover:border-primary/60 hover:bg-card active:scale-[0.99]"
+      className="group min-h-[86px] min-w-0 rounded-xl border border-border/70 border-l-4 bg-card/85 px-3 py-2 text-left shadow-sm transition-all hover:border-primary/60 hover:bg-card active:scale-[0.99]"
       style={{
         width,
         borderLeftColor: course.display_color_bg,
@@ -104,7 +104,7 @@ const MobileTimelineCourse: React.FC<{
       <div className="flex min-w-0 items-start gap-2">
         {typeLabel && (
           <span
-            className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+            className={`mt-1 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none ${
               isExam ? "bg-amber-500 text-white" : "bg-primary/80 text-primary-foreground"
             }`}
           >
@@ -118,7 +118,7 @@ const MobileTimelineCourse: React.FC<{
       <div className="mt-1 text-[12px] font-medium tabular-nums text-foreground/80">
         {formatTime(course.start_time)}–{formatTime(course.end_time)}
       </div>
-      <div className="mt-0.5 truncate text-[11px] leading-tight text-muted-foreground">
+      <div className="mt-1 truncate text-[11px] leading-tight text-muted-foreground">
         {secondaryLabel}
       </div>
     </button>
@@ -167,7 +167,7 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
 
   return (
     <section
-      className="mobile-day-enter touch-pan-y pb-4"
+      className="mobile-day-enter touch-pan-y pb-4 pt-2"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={() => {
@@ -175,11 +175,8 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
       }}
       aria-label="Emploi du temps de la journée"
     >
-      <div className="mb-3 flex items-end justify-between gap-3 px-1">
+      <div className="mb-4 flex items-end justify-between gap-3 px-1">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            {isToday ? "Aujourd’hui" : "Journée"}
-          </p>
           {firstCourse && lastCourseEnd !== undefined ? (
             <>
               <p className="mt-1 text-base font-semibold leading-tight text-foreground">
@@ -214,7 +211,7 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
       ) : (
         <div className="relative">
           <div className="absolute bottom-3 left-[52px] top-3 w-px bg-border/80" aria-hidden="true" />
-          <div className="space-y-2">
+          <div className="space-y-3">
             {clusters.map((cluster, index) => {
               const previousCluster = clusters[index - 1];
               const pause = previousCluster ? cluster.startTime - previousCluster.endTime : 0;
@@ -243,7 +240,7 @@ export const MobileDayTimeline: React.FC<MobileDayTimelineProps> = ({
                       <span className="h-px w-4 bg-border/60" />
                     </div>
                   )}
-                  <div className={`space-y-2 ${isFirstCluster && leadingFreeMinutes > 0 && leadingFreeMinutes < 30 ? "pt-2" : ""}`}>
+                  <div className={`space-y-3 ${isFirstCluster && leadingFreeMinutes > 0 && leadingFreeMinutes < 30 ? "pt-2" : ""}`}>
                     {courseRows.map((row) => {
                       const columnCount = getColumnCount(row);
                       return (
